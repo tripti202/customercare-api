@@ -1,25 +1,33 @@
-# Use official Java 17 image
-FROM eclipse-temurin:17-jdk-alpine
+# ===============================
+# Build stage
+# ===============================
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 
-# App directory inside container
 WORKDIR /app
 
-# Copy Maven build
+# Copy pom.xml and download dependencies
 COPY pom.xml .
-COPY mvnw .
-COPY .mvn .mvn
-
-# Download dependencies
-RUN ./mvnw dependency:go-offline
+RUN mvn dependency:go-offline
 
 # Copy source code
-COPY src src
+COPY src ./src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
-# Expose port
+
+# ===============================
+# Run stage
+# ===============================
+FROM eclipse-temurin:17-jdk-alpine
+
+WORKDIR /app
+
+# Copy jar from build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose port (Render uses 8080)
 EXPOSE 8080
 
-# Run app
-CMD ["java", "-jar", "target/customercare-api-0.0.1-SNAPSHOT.jar"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
