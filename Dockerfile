@@ -1,13 +1,14 @@
-# Use official Java 17 image
 FROM eclipse-temurin:17-jdk-alpine
 
-# App directory inside container
 WORKDIR /app
 
-# Copy Maven build
+# Copy Maven files
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
+
+# 🔥 THIS LINE FIXES THE ERROR
+RUN chmod +x mvnw
 
 # Download dependencies
 RUN ./mvnw dependency:go-offline
@@ -15,11 +16,9 @@ RUN ./mvnw dependency:go-offline
 # Copy source code
 COPY src src
 
-# Build the application
+# Build application
 RUN ./mvnw clean package -DskipTests
 
-# Expose port
-EXPOSE 8080
-
 # Run app
-CMD ["java", "-jar", "target/customercare-api-0.0.1-SNAPSHOT.jar"]
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","target/customercare-api-0.0.1-SNAPSHOT.jar"]
